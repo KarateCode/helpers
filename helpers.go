@@ -2,6 +2,8 @@ package helpers
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 	"os"
 	"runtime/debug"
 )
@@ -32,11 +34,35 @@ const (
 	BgWhite = "\x1b[47m" 
 )
 
+var filePath *regexp.Regexp
+
+func init() {
+	filePath = regexp.MustCompile("/[A-Za-z._]+:")
+}
+
 func ShouldEqual(comparer, comparee interface {}) {
 	if comparer != comparee {
 		fmt.Printf(FgRed + Bright + "\n    expected: " + FgWhite + "%v", comparer)
 		fmt.Printf(FgRed +          "\n         got: " + FgWhite + "%v\n\n" + Reset, comparee)
-		fmt.Printf("%v\n", string(debug.Stack()))
+		stack := string(debug.Stack())
+		
+		lines := strings.Split(stack, "\n")
+		for _, line := range lines{
+			if (strings.Contains(line, "helpers.go")) {
+				continue
+			}
+			if (strings.Contains(line, "debug.Stack()")) {
+				continue
+			}
+			indexes := filePath.FindStringIndex(line)
+			if len(indexes) > 0 {
+				match := filePath.FindString(line)
+				fmt.Printf(line[:indexes[0]+1] + FgBlue + Bright + match[1:len(match)-1] + Reset + line[indexes[0]+len(match)-1:] + "\n")
+				
+			} else {
+				println(line)
+			}
+		}
 		os.Exit(-1)
 	}
 }
