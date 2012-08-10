@@ -54,15 +54,66 @@ func ShouldEqual(comparer, comparee interface {}) {
 			if (strings.Contains(line, "debug.Stack()")) {
 				continue
 			}
+			if (strings.Contains(line, "testing.go:273")) {
+				continue
+			}
+			if (strings.Contains(line, "test.F(t)")) {
+				continue
+			}
+			if (strings.Contains(line, "proc.c:271")) {
+				continue
+			}
+			if (strings.Contains(line, "goexit(void)")) {
+				continue
+			}
 			indexes := filePath.FindStringIndex(line)
 			if len(indexes) > 0 {
 				match := filePath.FindString(line)
 				fmt.Printf(line[:indexes[0]+1] + FgBlue + Bright + match[1:len(match)-1] + Reset + line[indexes[0]+len(match)-1:] + "\n")
-				
 			} else {
 				println(line)
 			}
 		}
 		os.Exit(-1)
 	}
+}
+
+func IncludeExclude(excluded bool, origList []int, newList []int) []int {
+	if excluded {
+		return Union(origList, newList)
+	}
+	return Subtract(origList, newList)
+}
+
+func Union(a, b []int) []int {
+	var c []int 
+	for _, val := range a {
+		if Index(b, val) == -1 {
+			c = append(c, val)
+		}
+	}
+	results := make([]int, len(c) + len(b))
+	copy(results, c)
+	copy(results[len(c):], b)
+	return results
+}
+
+func Index(a []int, sep int) int {
+	for i, val := range a {
+		if val == sep {
+			return i
+		}
+	}
+	return -1
+}
+
+func Subtract(a, b []int) []int {
+	var index int
+	for _, num := range b {
+		index = Index(a, num)
+		if index != -1 {
+			a = append(a[:index], a[index+1:]...)
+		}
+	}
+	return a
 }
